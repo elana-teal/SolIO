@@ -56,10 +56,8 @@ class Game:
     def __init__(self):
         self.columns = [[] for _ in range(self.NB_COLUMNS)]
         self.reserves = [[] for _ in range(self.NB_RESERVES)]
-        self.end_values = dict.fromkeys(Color,Card(CardType.NUMERAL,value=0)) # colors are put in any order...
         self.end_stacks = []
         self.flower = False
-        self.cards = []
 
     def get_column(self,iCol):
         return self.columns[iCol].copy()
@@ -70,21 +68,33 @@ class Game:
     def get_flower(self):
         return self.flower
 
+    def setState(self,\
+        columns=None,\
+        reserves=None,\
+        end_stacks=None,
+        flower=None):
+
+        self.__init__()
+        if columns!=None: self.columns=columns
+        if reserves!=None: self.reserves=reserves
+        if end_stacks!=None: self.end_stacks=end_stacks
+        if flower!=None: self.flower=flower
+
     def generates(self):
         self.__init__()
 
         # generate the cards
-        self.cards = [Card(CardType.FLOWER)]
+        cards = [Card(CardType.FLOWER)]
         for color in Color:
-            self.cards.extend([Card(CardType.DRAGON,color=color).copy()]*self.NB_DRAGONS)
+            cards.extend([Card(CardType.DRAGON,color=color).copy()]*self.NB_DRAGONS)
         for color,value in set(product(Color,range(1,self.MAX_NUMERAL+1))):
-            self.cards.append(Card(CardType.NUMERAL,color=color,value=value))
+            cards.append(Card(CardType.NUMERAL,color=color,value=value))
 
-        random.shuffle(self.cards)
+        random.shuffle(cards)
 
         # distribute the cards
-        for i, card in enumerate(self.cards):
-            iCol = (i*self.NB_COLUMNS)//(len(self.cards))
+        for i, card in enumerate(cards):
+            iCol = (i*self.NB_COLUMNS)//(len(cards))
             #print(card, iCol)
             self.columns[iCol].append(card)
 
@@ -98,29 +108,30 @@ class Game:
         for i,column in enumerate(self.columns):
             print(i,column)
 
-    def getExposedCards(self):
-        exposed = []
-        for col in self.columns + self.reserves:
-            if len(col) != 0:
-                exposed.append(col[-1])
-        return exposed
-
+    """
+        def getExposedCards(self):
+            exposed = []
+            for col in self.columns + self.reserves:
+                if len(col) != 0:
+                    exposed.append(col[-1])
+            return exposed
+    """
     def dragons(self):
         return [] # TODO
 
     def auto(self):
         def isNextToDiscard(card):
-            return False
-            # TODO
-            """
-            canPut = (self.end_values.get(card.getColor()).getValue()+1 == card.getValue())
-            if not canPut: return False
-            for color in Color:
-                if (color.value < card.getColor().value and self.end_values.get(color).getValue() < card.getValue()) or\
-                   (color.value >= card.getColor().value and self.end_values.get(color).getValue() + 1< card.getValue()) :
+            if len(self.end_stacks) != len(Color):
+                return False
+            seen = False
+            for other in self.end_stacks:
+                if other.getColor() == card.getColor():
+                    seen = True
+                elif not seen and other.getValue() < card.getValue():
+                    return False
+                elif seen and other.getValue() < card.getValue()-1:
                     return False
             return True
-            """
 
         def autoStep():
             for x in self.columns + self.reserves:
@@ -134,15 +145,21 @@ class Game:
                     return True
 
                 # Numeral
-                if card.getType() == CardType.NUMERAL and isNextToDiscard(card):
-                    x.pop()
-                    #self.end_values[card.getColor()] = card
-                    # TODO 
-                    return True
+                if card.getType() == CardType.NUMERAL:
+                    if card.getValue() == 1:
+                        self.end_stacks.append(card)
+                        x.pop()
+                        return True
+                    elif isNextToDiscard(card):
+                        pos = [i for i,v in enumerate(self.end_stacks) if v.getColor() == card.getColor()][0]
+                        self.end_stacks[pos] = card
+                        x.pop()
+                        return True
 
             return False
-        while autoStep():
-            continue
+        #while autoStep():
+        #    continue
+        return autoStep()
 """
 game = Game()
 game.generates()

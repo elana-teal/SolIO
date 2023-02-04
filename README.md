@@ -1,5 +1,5 @@
 # SolIO
-(Future) automatic solitaire solver for ShenzenIO.
+A Solitaire Solver for Shenzen IO project.
 
 ## Libraries
 * pyautogui
