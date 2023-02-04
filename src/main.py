@@ -7,6 +7,10 @@ def play(game : model.Game):
     pygame.init()
     gui.init()
 
+    pygame.display.set_caption('SolIO')
+    Icon = pygame.image.load('res/icon.png')
+    pygame.display.set_icon(Icon)
+
     size = width, height = gui.SCREEN_SIZE
     screen = pygame.display.set_mode(size)
 
